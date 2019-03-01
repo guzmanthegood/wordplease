@@ -1,12 +1,13 @@
 from rest_framework import generics, viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.response import Response
 
 from django.contrib.auth.models import User
 from blogs.models import Post
 
 from . import serializers
-from .permissions import UserPermission
+from .permissions import UserPermission, PostPermission
 
 class UserViewSet(viewsets.ModelViewSet):
     permission_classes = (UserPermission,)
@@ -28,7 +29,7 @@ class BlogViewSet(viewsets.ModelViewSet):
     ordering = ['username']
 
 class PostViewSet(viewsets.ModelViewSet):
-    permission_classes = (AllowAny,)
+    permission_classes = (PostPermission,)
     queryset = Post.objects.all()
     serializer_class = serializers.PostSerializer
 
@@ -37,6 +38,9 @@ class PostViewSet(viewsets.ModelViewSet):
     filter_fields = ['title', 'description']
     ordering = ['-pub_date']
     ordering_fields = ['pub_date', 'owner__username']
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 class PostList(generics.ListAPIView):    
     serializer_class = serializers.PostListSerializer
